@@ -40,6 +40,7 @@ class Widget(QWidget):
         self.textUpQLabel.setText(text)
 
     def setTextDown (self, text):
+        print(text)
         self.textDownQLabel.setText(text)
 
     def setIcon (self, imagePath):
@@ -82,7 +83,11 @@ class Mainmenu(object):
         for i in chatlist:
             path = self.start_file 
             lastchat = self.read_chats(i, 'chat.txt')
-            lastchat = lastchat[-1]
+            if len(lastchat) > 0:
+                lastchat = lastchat[-1]
+            else:
+                lastchat = ''
+            print(lastchat)
             self.add_widget(path + self.bk + 'files' + self.bk + i + self.bk + 'dependents' + self.bk + 'icon.png', i, lastchat)
     def read_chats(self, group, file):
         path = self.start_file + self.bk

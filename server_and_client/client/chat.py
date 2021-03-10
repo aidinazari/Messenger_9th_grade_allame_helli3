@@ -155,7 +155,7 @@ class chat_window(object):
                 
                 Format = Format.split(self.bk)[0]
                 
-                msg = self.message_format_maker('Attach ' + self.u[:-1] + ' ' + self.group + ' ' + self.attach_file.file + ' ' + Format)
+                msg = self.message_format_maker('Attach', self.u[:-1], self.group, self.attach_file.file, Format)
                 
                           
                 self.s.send(msg)
@@ -267,7 +267,7 @@ class chat_window(object):
            
             if not os.path.isfile(path):
                
-                msg = self.message_format_maker('recv ' + self.u[:-1] + ' ' + self.group + ' ' + i[2])
+                msg = self.message_format_maker('recv', self.u[:-1], self.group, i[2])
            
                 self.s.send(msg)
                 
@@ -307,11 +307,11 @@ class chat_window(object):
         
         
 
-        msg = 'chat ' + name + ' ' + str(ln) + ' ' + self.u
+        msg = self.message_format_maker('chat', name, str(ln), self.u[:-1])
 
         
 
-        self.s.send(msg.encode())
+        self.s.send(msg)
         print('msg sent')
 
         
@@ -477,7 +477,7 @@ if __name__ == "__main__":
     s = socket.socket()
     ip = '127.0.0.1'
 
-    port = 2021
+    port = 2020
 
     s.connect((ip, port))
     
