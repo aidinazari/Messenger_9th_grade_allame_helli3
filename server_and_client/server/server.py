@@ -12,6 +12,7 @@ import os
 
 from os.path import basename
 
+import pickle
 
 
 
@@ -25,7 +26,8 @@ def broadcast(msg, sender):
     for i in clients:
         if i != sender:
             print(i, msg, '-----------')
-            i.send(msg.encode())
+            msg = pickle.dumps(msg)
+            i.send(msg)
 
 
 
@@ -108,26 +110,28 @@ def client(conn, s, clients):
 
     
         
-        msg = conn.recv(1024).decode()
+        msg = conn.recv(1024)
+        msg = pickle.loads(msg)
         print(msg)
         if len(msg) == 0:
             done = True
-        elif msg.split()[0] == 'chat':
-            if msg.split()[1] in chatlist:
-                users = get_chatlist(msg.split()[1], 'users.txt')
+        elif msg[0] == 'chat':
+            if msg[1] in chatlist:
+                users = get_chatlist(msg[1], 'users.txt')
                 print(users)
-                if msg.split()[3] in users:
+                if msg[3] in users:
+                    print('start')
                
-                    path = '/home/sami/Documents/Computer/server_and_client/server/files/' + str(msg.split()[1]) + '/chat.txt'
+                    path = '/home/sami/Documents/Computer/server_and_client/server/files/' + str(msg[1]) + '/chat.txt'
                     f = open(path, 'rb')
                     
 
                     ln = sum(1 for i in open(path))
                    
-                    if ln > int(msg.split()[2]):
+                    if ln > int(msg[2]):
                         
                    
-                        for i in range(int(msg.split()[2])):
+                        for i in range(int(msg[2])):
                             print(i)
                             a = f.readline()
                             
@@ -137,7 +141,7 @@ def client(conn, s, clients):
                         while l:
                             conn.send(l)
                             l = f.read()
-                            
+                    print('Done')  
                     conn.send('Done'.encode())
                     
                         
@@ -148,24 +152,24 @@ def client(conn, s, clients):
                     
                     print('Group updated succesfully')
 
-        elif msg.split()[0] == 'Attach':
-            if msg.split()[2] in chatlist:
-                users = get_chatlist(msg.split()[2], 'users.txt')
+        elif msg[0] == 'Attach':
+            if msg[2] in chatlist:
+                users = get_chatlist(msg[2], 'users.txt')
                 print(users)
-                if msg.split()[1] in users:
-                    if os.path.isfile(msg.split()[3]):
+                if msg[1] in users:
+                    if os.path.isfile(msg[3]):
                         print('go')
-                        path = '/home/sami/Documents/Computer/server_and_client' + '/server/files/' + str(msg.split()[2]) + '/'
+                        path = '/home/sami/Documents/Computer/server_and_client' + '/server/files/' + str(msg[2]) + '/'
                         
                         m = 'True'
                         conn.send(m.encode())
                         
-                        filename = msg.split()[3].split('/')
+                        filename = msg[3].split('/')
                         filename = filename[-1]
 
                         recv_file(path, filename)
                         
-                        add_chat(msg.split()[1] + ' ' + msg.split()[0] + ' ' + filename + '\n', msg.split()[2]) 
+                        add_chat(msg[1] + ' ' + msg[0] + ' ' + filename + '\n', msg[2]) 
 
 
 
@@ -180,12 +184,12 @@ def client(conn, s, clients):
                 conn.send('group not found'.encode())
                 
         
-        elif msg.split()[0] == 'recv':
-            if msg.split()[2] in chatlist:
-                users = get_chatlist(msg.split()[2], 'users.txt')
+        elif msg[0] == 'recv':
+            if msg[2] in chatlist:
+                users = get_chatlist(msg[2], 'users.txt')
                 print(users)
-                if msg.split()[1] in users:
-                    path = '/home/sami/Documents/Computer/server_and_client/' + 'server/files/' + msg.split()[2] + '/' + msg.split()[3]
+                if msg[1] in users:
+                    path = '/home/sami/Documents/Computer/server_and_client/' + 'server/files/' + msg[2] + '/' + msg[3]
                     if os.path.isfile(path):
                         print('-----------')
                         conn.send('True'.encode())
@@ -222,7 +226,7 @@ import threading
 
 s = socket.socket()
 ip = '127.0.0.1'
-port = 2021
+port = 2020
 
 s.bind((ip, port))
 s.listen()
