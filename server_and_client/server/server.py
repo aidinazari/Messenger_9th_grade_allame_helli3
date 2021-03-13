@@ -6,6 +6,8 @@
 #
 # WARNING! All changes made in this file will be lost!
 
+from get_path_infor import *
+
 from zipfile import ZipFile
 
 import os
@@ -21,13 +23,15 @@ import pickle
 
 
 
+
+
 def broadcast(msg, sender):
     global clients
     for i in clients:
         if i != sender:
-            print(i, msg, '-----------')
-            msg = pickle.dumps(msg)
-            i.send(msg)
+            
+            i.send(msg.encode())
+            print(msg, 'sent')
 
 
 
@@ -38,18 +42,21 @@ def broadcast(msg, sender):
 
 def send_file(path):
     f = open(path, 'rb')
-    print(path)
+  
     data = f.read(1024)
     while data:
         conn.send(data)
         data = f.read(1024)
+
     conn.send('done'.encode())
     f.close()
-    print('file sent succesfully')
+    print('file', path, ' sent succesfully')
+ 
     
 
 
 def recv_file(path, filename):
+    print(path + filename)
     f = open(path + filename, 'wb')
                   
     data = conn.recv(1024)
@@ -63,8 +70,9 @@ def recv_file(path, filename):
     data = data[:-4]
     f.write(data)
 
-    print('file recvied succesfully')
+
     f.close()
+    print('file', path, ' recieved succesfully')
 
 
 
@@ -72,7 +80,7 @@ def recv_file(path, filename):
 
 
 def add_chat(msg, group):
-    f = open('/home/sami/Documents/Computer/server_and_client/server/files/' + group + '/chat.txt', 'a')
+    f = open(start_file + 'files' + bk + group + bk + 'chat.txt', 'a')
     f.write(msg )
     f.close()
 
@@ -80,9 +88,9 @@ def add_chat(msg, group):
 
 
 def get_chatlist(group, file):
-    path = './'
+    path = start_file
     if str(group) != 'False':
-        path += 'files/' + group + '/' + file
+        path += 'files' + bk + group + bk + file
     else:
         path += file
     chatf = open(path, 'r')
@@ -98,9 +106,9 @@ def get_chatlist(group, file):
 
 
 def client(conn, s, clients):
-    print('start')
+
     chatlist = get_chatlist(False, 'chatlist.txt')
-    print(chatlist)
+
     done = False
     while not done:
         
@@ -110,19 +118,19 @@ def client(conn, s, clients):
 
     
         
-        msg = conn.recv(1024)
-        msg = pickle.loads(msg)
-        print(msg)
+        __msg = conn.recv(1024).decode()
+        msg = __msg.split()
+        
         if len(msg) == 0:
             done = True
         elif msg[0] == 'chat':
             if msg[1] in chatlist:
                 users = get_chatlist(msg[1], 'users.txt')
-                print(users)
+                
                 if msg[3] in users:
-                    print('start')
+             
                
-                    path = '/home/sami/Documents/Computer/server_and_client/server/files/' + str(msg[1]) + '/chat.txt'
+                    path = start_file + 'files' + bk + str(msg[1]) + bk + 'chat.txt'
                     f = open(path, 'rb')
                     
 
@@ -141,8 +149,8 @@ def client(conn, s, clients):
                         while l:
                             conn.send(l)
                             l = f.read()
-                    print('Done')  
-                    conn.send('Done'.encode())
+       
+                    conn.send('done'.encode())
                     
                         
                            
@@ -155,28 +163,29 @@ def client(conn, s, clients):
         elif msg[0] == 'Attach':
             if msg[2] in chatlist:
                 users = get_chatlist(msg[2], 'users.txt')
-                print(users)
+           
                 if msg[1] in users:
-                    if os.path.isfile(msg[3]):
-                        print('go')
-                        path = '/home/sami/Documents/Computer/server_and_client' + '/server/files/' + str(msg[2]) + '/'
+                    
+                 
+                    path = start_file + 'files' + bk + str(msg[2]) + bk
+                    
+                    m = 'True'
+                    conn.send(m.encode())
                         
-                        m = 'True'
-                        conn.send(m.encode())
-                        
-                        filename = msg[3].split('/')
-                        filename = filename[-1]
+                    filename = msg[3].split(bk)
+                    filename = filename[-1]
+                    
 
-                        recv_file(path, filename)
+                    recv_file(path, filename)
                         
-                        add_chat(msg[1] + ' ' + msg[0] + ' ' + filename + '\n', msg[2]) 
-
+                    add_chat(msg[1] + ' ' + msg[0] + ' ' + filename + '\n', msg[2]) 
+                    print(msg, 'will be sent from x attach y')
+                    broadcast('update-group', conn)
 
 
 
                                  
-                    else:
-                        conn.send('File name exists'.encode())
+                    
                 else:
                     conn.send('You are not in group'.encode())
                     
@@ -187,12 +196,13 @@ def client(conn, s, clients):
         elif msg[0] == 'recv':
             if msg[2] in chatlist:
                 users = get_chatlist(msg[2], 'users.txt')
-                print(users)
+           
                 if msg[1] in users:
-                    path = '/home/sami/Documents/Computer/server_and_client/' + 'server/files/' + msg[2] + '/' + msg[3]
+                    path = start_file + 'files' + bk + msg[2] + bk + msg[3]
                     if os.path.isfile(path):
-                        print('-----------')
+                       
                         conn.send('True'.encode())
+                        print('path to send file ', path)
                         send_file(path)
                     
 
@@ -205,17 +215,45 @@ def client(conn, s, clients):
             else:
                 conn.send('group not found'.encode())
 
+        elif msg[0] == 'get_users':
+            if msg[1] in chatlist:
+                users = get_chatlist(msg[1], 'users.txt')
+                conn.send('True')
+                users = pickle.dumps(users)
+                conn.send(users)
+            else:
+                conn.send('group not found'.encode())
+
+##        elif msg[0] == 'get_user_info':
+##            users = get_chatlist('False', 'users.txt')
+##            if msg[1] in users:
+##                
+##            else:
+##                conn.send('user not found'.encode())
+
 
 
 
 
         
         else:
-            print(msg)
-            msg = msg[4:]
-            broadcast(msg, conn)
+         
+            nat = ''
+            for i in msg[2:]:
+                nat += i + ' '
+          
+            __msg = msg[0] + ' ' + msg[1] + '\n' + nat
+            print()
+            print(__msg)
+            broadcast(__msg, conn)
     loc = clients.index(conn)
     del clients[loc]
+
+
+
+
+
+
 
 
 
@@ -226,7 +264,7 @@ import threading
 
 s = socket.socket()
 ip = '127.0.0.1'
-port = 2020
+port = 12345
 
 s.bind((ip, port))
 s.listen()
