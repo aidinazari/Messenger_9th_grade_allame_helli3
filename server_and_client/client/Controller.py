@@ -4,22 +4,20 @@ from PyQt5 import QtWidgets
 import socket
 import threading
 
-username = 'sami' + '\n'
+
 s = socket.socket()
 ip = '127.0.0.1'
 
-port = 2021
+port = 12345
 
 s.connect((ip, port))
 
 class Controller:
-    def __init__(self, s, username):
+    def __init__(self, s):
         self.u = input() + '\n'
         self.s = s
         pass
     def show_mainmenu(self):
-       
-    
         self.Form = QtWidgets.QWidget()
         self.mainmenu = Mainmenu(self.Form)
        
@@ -37,18 +35,11 @@ class Controller:
         recv = threading.Thread(target=self.chat.recv_m)
         recv.start()
         print(1240)
-   
-
-
-
-
-
 
 if __name__ == "__main__":
     import sys
     app = QtWidgets.QApplication(sys.argv)
-
-    ui = Controller(s, username)
+    ui = Controller(s)
     ui.show_mainmenu()
 
     
